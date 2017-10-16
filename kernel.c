@@ -6,17 +6,17 @@
 #endif
 #include <stddef.h>
 #include <stdint.h>
- 
+
 /* Check if the compiler thinks we are targeting the wrong operating system. */
 #if defined(__linux__)
 #error "You are not using a cross-compiler, you will most certainly run into trouble"
 #endif
- 
+
 /* This tutorial will only work for the 32-bit ix86 targets. */
 #if !defined(__i386__)
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
- 
+
 /* Hardware text mode color constants. */
 enum vga_color {
 	COLOR_BLACK = 0,
@@ -36,17 +36,17 @@ enum vga_color {
 	COLOR_LIGHT_BROWN = 14,
 	COLOR_WHITE = 15,
 };
- 
+
 uint8_t make_color(enum vga_color fg, enum vga_color bg) {
   return fg | bg << 4;
 }
- 
+
 uint16_t make_vgaentry(char c, uint8_t color) {
   uint16_t c16 = c;
   uint16_t color16 = color;
   return c16 | color16 << 8;
 }
- 
+
 size_t strlen(const char* str) {
   size_t ret = 0;
   while ( str[ret] != 0 )
@@ -61,7 +61,8 @@ size_t terminal_row;
 size_t terminal_column;
 uint8_t terminal_color;
 uint16_t* terminal_buffer;
- 
+
+
 void terminal_initialize() {
   terminal_row = 0;
   terminal_column = 0;
@@ -74,31 +75,56 @@ void terminal_initialize() {
     }
   }
 }
- 
+
 void terminal_setcolor(uint8_t color) {
   terminal_color = color;
 }
- 
+void terminal_scroll() {
+    for (size_t h = 0; h < VGA_HEIGHT; h++) {
+        for (size_t w = 0; w < VGA_WIDTH; w++) {
+            const size_t index = h * VGA_WIDTH + w;
+            terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
+        }
+    }
+}
+
+
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y) {
   const size_t index = y * VGA_WIDTH + x;
   terminal_buffer[index] = make_vgaentry(c, color);
 }
 
 void terminal_putchar(char c) {
-  terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-  if (++terminal_column == VGA_WIDTH) {
+
+
+if (c == '\n')
+{
+	terminal_row++;
+	terminal_column =0;
+ }
+
+else {
+ terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
+  if(++terminal_column == VGA_WIDTH){
     terminal_column = 0;
-    if (++terminal_row == VGA_HEIGHT) {
+   if (++terminal_row == VGA_HEIGHT) {
       terminal_row = 0;
+
     }
   }
 }
- 
+ }
 void terminal_writestring(const char* data) {
   size_t datalen = strlen(data);
   for (size_t i = 0; i < datalen; i++)
     terminal_putchar(data[i]);
-}
+ // Scrolling
+        if (terminal_row == VGA_HEIGHT) {
+            terminal_scroll();
+            terminal_row--;
+        }
+    }
+
 
 #if defined(__cplusplus)
 extern "C" /* Use C linkage for kernel_main. */
@@ -106,10 +132,33 @@ extern "C" /* Use C linkage for kernel_main. */
 void kernel_main() {
   /* Initialize terminal interface */
   terminal_initialize();
-  
+
   /* Since there is no support for newlines in terminal_putchar
    * yet, '\n' will produce some VGA specific character instead.
    * This is normal.
    */
-  terminal_writestring("Hello, kernel World!\n");
+//int i=0;
+//terminal_setcolor(COLOR_BLUE);
+ //for (i=0; i<2;i++){
+  //terminal_writestring("Hello, kernel World!\n");
+  //}
+ terminal_setcolor(COLOR_RED);
+    for (int i = 0; i < 1; i++) {
+        terminal_writestring("Hello, World!\n");
+}
+ terminal_setcolor(COLOR_WHITE);
+    for (int i = 0; i < 6; i++) {
+        terminal_writestring("Hello, World!\n");
+}
+ terminal_setcolor(COLOR_BLUE);
+    for (int i = 0; i < 18; i++) {
+        terminal_writestring("Hello, World!\n");
+    }
+terminal_setcolor(COLOR_GREEN);
+for (int l = 0; l < 5; l++) {
+        terminal_writestring("Hello, World!\n");
+}
+
+
+
 }
